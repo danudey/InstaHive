@@ -19,13 +19,16 @@
 - 💾 Saves files directly to your **Downloads** folder  
 - 🧠 Smart shortcode extractor  
 - 🔐 Login with **session saving**  
-- 💻 Works on both **Windows** and **Android-Termux**
+- 💻 Works on both **Windows** and **Android-Termux**  
+- 🛠️ **Auto update** to the latest version  
+- ⚡ **Progress bar** during downloads for better visibility  
+- 🔒 **Log suppression** to minimize unnecessary logs  
 
 ---
 
 ## 🧰 Requirements
 
-- Python 3.8+
+- Python 3.8+  
 - Required packages are listed in `requirements.txt`
 
 Install them using:
@@ -51,10 +54,33 @@ Then follow the prompts to log in and paste any Instagram **post/reel** URL.
 
 ---
 
+## 🧩 How It Works
+
+1. **Login**: Upon first run, you'll be asked to log in with your Instagram credentials. The session is saved for future logins, so you won't need to log in again unless you choose to.
+2. **Download**: Simply paste a URL from Instagram, and the tool will automatically extract the shortcode and start downloading the content.
+3. **Progress Bar**: The download process now features a progress bar for better feedback on large files.
+4. **Updates**: The script checks for new updates each time it runs and prompts you to download the latest version if available.
+5. **Clean Interface**: The tool clears the screen after each download, ensuring a smooth user experience.
+
+---
+
 ## 📂 Downloads Location
 
 - **Windows:** `C:/Users/YourName/Downloads`  
 - **Termux:** `/data/data/com.termux/files/home/storage/downloads`
+
+---
+
+## 🖥️ Auto Update
+
+The tool automatically checks for new versions on GitHub. If a new version is available, it will prompt you to update the script. You can also manually trigger an update by running the script again.
+
+---
+
+## 🧑‍💻 Customization and Settings
+
+- **Logging**: The script suppresses unnecessary logging from Instaloader to avoid cluttering the terminal.
+- **Session File**: A session file is saved to avoid repeated logins. You can delete it to log in again.
 
 ---
 
@@ -69,6 +95,9 @@ Then follow the prompts to log in and paste any Instagram **post/reel** URL.
 ## 📄 License
 
 This project is open-source and available under the [MIT License](LICENSE).
+
 ---
 
 ## ⭐ Give the repo a star if you found it useful!
+
+---
