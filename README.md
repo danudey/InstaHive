@@ -1,8 +1,8 @@
 # InstaHive 🐝 - Instagram Downloader CLI
 
-**Author:** [Rajkishor Patra](https://github.com/imraj569)  
-**Tool:** `instagram_downloader.py`  
-**Platform:** Windows & Termux (Android)  
+**Author:** [Rajkishor Patra](https://github.com/imraj569)
+**Tool:** `instagram_downloader.py`
+**Platform:** Windows & Termux (Android)
 **Repo:** https://github.com/imraj569/InstaHive
 
 ---
@@ -15,20 +15,20 @@
 
 ## ✨ Features
 
-- 📥 Download Instagram **posts**, **reels**, and **IGTV** videos  
-- 💾 Saves files directly to your **Downloads** folder  
-- 🧠 Smart shortcode extractor  
-- 🔐 Login with **session saving**  
-- 💻 Works on both **Windows** and **Android-Termux**  
-- 🛠️ **Auto update** to the latest version  
-- ⚡ **Progress bar** during downloads for better visibility  
-- 🔒 **Log suppression** to minimize unnecessary logs  
+- 📥 Download Instagram **posts**, **reels**, and **IGTV** videos
+- 💾 Saves files directly to your **Downloads** folder
+- 🧠 Smart shortcode extractor
+- 🔐 Login with **session saving**
+- 💻 Works on both **Windows** and **Android-Termux**
+- 🛠️ **Auto update** to the latest version
+- ⚡ **Progress bar** during downloads for better visibility
+- 🔒 **Log suppression** to minimize unnecessary logs
 
 ---
 
 ## 🧰 Requirements
 
-- Python 3.8+  
+- Python 3.8+
 - Required packages are listed in `requirements.txt`
 
 Install them using:
@@ -66,7 +66,7 @@ Then follow the prompts to log in and paste any Instagram **post/reel** URL.
 
 ## 📂 Downloads Location
 
-- **Windows:** `C:/Users/YourName/Downloads`  
+- **Windows:** `C:/Users/YourName/Downloads`
 - **Termux:** `/data/data/com.termux/files/home/storage/downloads`
 
 ---
@@ -86,8 +86,8 @@ The tool automatically checks for new versions on GitHub. If a new version is av
 
 ## 🏷️ Topics
 
-`instagram-downloader` `python-instagram-downloader` `download-instagram-posts`  
-`download-instagram-reels` `cli-tool` `termux` `windows` `instaloader`  
+`instagram-downloader` `python-instagram-downloader` `download-instagram-posts`
+`download-instagram-reels` `cli-tool` `termux` `windows` `instaloader`
 `social-media-downloader` `automation` `python-tool`
 
 ---
