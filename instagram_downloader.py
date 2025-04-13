@@ -1,7 +1,63 @@
-import os,re,shutil,platform
-import instaloader
+import os
+import re
+import shutil
+import platform
+import requests
+import sys
 from time import sleep
+import instaloader
 from DataBase.features import *
+
+# Function to get the latest version from version.txt
+def get_latest_version():
+    version_url = "https://raw.githubusercontent.com/imraj569/InstaHive/main/version.txt"
+    try:
+        response = requests.get(version_url, timeout=5)
+        if response.status_code == 200:
+            return response.text.strip()
+        else:
+            print(Fore.RED + "[X] Failed to fetch version from GitHub.")
+    except Exception as e:
+        print(Fore.RED + f"[X] Error fetching version: {e}")
+    return None
+
+# Check and update the script if a new version is found
+def check_and_update():
+    # Fetch the latest version from GitHub
+    remote_version = get_latest_version()
+    
+    # Check if the remote version exists and is different from the current version
+    if remote_version:
+        if remote_version != get_current_version():  # Compare with current version in the script
+            print(Fore.MAGENTA + f"[!] New version available: {remote_version}. Updating...")
+            update_script(remote_version)  # If update is needed, update the script
+        else:
+            print(Fore.GREEN + "[✓] You’re already using the latest version.")
+
+# Update the script with the new code from GitHub
+def update_script(remote_version):
+    script_url = "https://raw.githubusercontent.com/imraj569/InstaHive/main/instagram_downloader.py"
+    local_file = sys.argv[0]
+
+    try:
+        new_code = requests.get(script_url).text
+        with open(local_file, "w", encoding="utf-8") as f:
+            f.write(new_code)
+
+        print(Fore.GREEN + "[✓] Update complete. Restarting...")
+        sleep(2)
+        os.execv(sys.executable, ['python'] + sys.argv)  # Restart the script to apply updates
+    except Exception as e:
+        print(Fore.RED + f"[X] Update failed: {e}")
+
+# Function to get the current version of the script (use version.txt as the source)
+def get_current_version():
+    try:
+        with open("version.txt", "r") as file:
+            return file.read().strip()  # Get current version from the version.txt file
+    except FileNotFoundError:
+        print(Fore.RED + "[X] version.txt not found.")
+    return "unknown"  # Default fallback version if version.txt isn't found
 
 # Determine platform-specific download path
 if platform.system() == "Windows":
@@ -17,12 +73,12 @@ temp_dir = os.path.join(download_path, "temp_download")
 def clear_screen():
     os.system('cls' if platform.system() == 'Windows' else 'clear')
 
-# Extract shortcode
+# Extract shortcode from URL
 def extract_shortcode(url):
     match = re.search(r"instagram\.com/(?:reel|p|tv)/([^/?#&]+)", url)
     return match.group(1) if match else None
 
-# Setup instaloader
+# Setup Instaloader
 L = instaloader.Instaloader(
     download_video_thumbnails=False,
     download_geotags=False,
@@ -56,6 +112,9 @@ def download_post(shortcode):
 # Start
 clear_screen()
 show_banner()
+
+# Check for updates at the beginning
+check_and_update()
 
 # Login
 username = input(Fore.YELLOW + "Enter your Instagram username: ")
