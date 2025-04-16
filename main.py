@@ -4,6 +4,7 @@ import requests
 import instaloader
 import telebot
 import sys
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load only the Telegram bot token
@@ -85,26 +86,6 @@ I'll send:
 🔗 GitHub: https://github.com/imraj569
 """)
 
-# /privacy
-@bot.message_handler(commands=['privacy'])
-def privacy_command(message):
-    privacy_text = """
-🔐 <b>Privacy Policy</b>
-
-📁 <b>No Storage of Personal Data:</b>  
-🕒 All processing happens in real-time. No messages, links, or media are stored on any server.
-
-🔑 <b>No Credential Collection:</b>  
-🙅‍♂️ This bot will never ask for your Instagram username or password.
-
-💬 <b>Message Privacy:</b>  
-📎 Only Instagram links are processed. All other messages are ignored automatically.
-
-🛡️ We care about your privacy. By using this bot, you agree to these simple, user-first principles.
-"""
-    bot.send_message(message.chat.id, privacy_text, parse_mode="HTML", disable_web_page_preview=True)
-
-
 # Handle Instagram links
 @bot.message_handler(func=lambda msg: True)
 def handle_instagram_url(message):
@@ -126,15 +107,18 @@ def handle_instagram_url(message):
         if r.status_code == 200:
             bot.send_photo(message.chat.id, r.content, caption="🖼 Cover image")
 
-        # Post details
-        caption = post.caption or "No caption"
+        # Post details (removed inline caption preview)
         details = f"""📄 <b>Post Details</b>
 👤 <b>User:</b> @{post.owner_username}
 ❤️ <b>Likes:</b> {post.likes}
-📝 <b>Caption:</b> {caption[:200]}{'...' if len(caption) > 200 else ''}
 🔗 <a href="{url}">View on Instagram</a>"""
         bot.send_message(message.chat.id, details, parse_mode="HTML", disable_web_page_preview=False)
 
+        # ✨ Copyable caption
+        caption = post.caption or "No caption"
+        bot.send_message(message.chat.id, f"📝 <b>Full Caption:</b>\n<code>{caption.strip()}</code>", parse_mode="HTML")
+
+       
         # Media
         if post.typename == "GraphSidecar":
             for node in post.get_sidecar_nodes():
@@ -145,19 +129,11 @@ def handle_instagram_url(message):
             send_media(message.chat.id, media_url, post.is_video)
 
     except Exception as e:
-        print(f"⚠️ Error processing request: {str(e)}")  # Log error to console
-        maintenance_msg = """🔧 Maintenance Notice
+        bot.reply_to(message, f"❌ Error: {str(e)}")
 
-Sorry, we're experiencing technical difficulties. 
-Our team is working to fix this issue ASAP.
-
-Please try again later. 
-If the problem persists, contact @imraj569"""
-        bot.reply_to(message, maintenance_msg)
 
 # Run bot
 if __name__ == "__main__":
-    os.system("clear")
     login_instagram()
     print("🤖 Bot is running... by @imraj569")
     try:
