@@ -1,105 +1,40 @@
+import os
 import re
 import requests
 import instaloader
 import telebot
 import sys
-from time import sleep
 from dotenv import load_dotenv
-import shutil,os,sys,requests,zipfile
-from colorama import Fore,init
-init(autoreset=True)
+import tempfile,psutil
 
-def get_latest_version():
-    version_url = "https://raw.githubusercontent.com/imraj569/InstaHive/main/version.txt"
-    try:
-        response = requests.get(version_url, timeout=5)
-        if response.status_code == 200:
-            return response.text.strip()
-        else:
-            print(Fore.RED + "[X] Failed to fetch version from GitHub.")
-    except Exception as e:
-        print(Fore.RED + f"[X] Error fetching version: {e}")
-    return None
-
-# Check and update the script if a new version is found
-def check_and_update():
-    # Fetch the latest version from GitHub
-    remote_version = get_latest_version()
+# Cross-platform single instance lock
+def single_instance_lock():
+    lock_file = os.path.join(tempfile.gettempdir(), "instahive.lock")
     
-    # Check if the remote version exists and is different from the current version
-    if remote_version:
-        if remote_version != get_current_version():  # Compare with current version in the script
-            print(Fore.MAGENTA + f"[!] New version available: {remote_version}. Updating...")
-            update_script(remote_version)  # If update is needed, update the script
-        else:
-            print(Fore.GREEN + "[✓] You’re already using the latest version.")
-
-# Update the script with the new code from GitHub
-def update_script(remote_version):
-    repo_url = "https://github.com/imraj569/InstaHive/archive/refs/heads/main.zip"
-    download_path = "InstaHive-main.zip"
-
-    # Download the entire repository as a zip
-    try:
-        print(Fore.YELLOW + "[*] Downloading the latest version of the repository...")
-        response = requests.get(repo_url, stream=True)
-        if response.status_code == 200:
-            with open(download_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=1024):
-                    if chunk:
-                        f.write(chunk)
-            print(Fore.GREEN + "[✓] Repository downloaded successfully.")
-        else:
-            print(Fore.RED + "[X] Failed to download the repository.")
-            return
-    except Exception as e:
-        print(Fore.RED + f"[X] Error downloading repository: {e}")
-        return
-
-    # Extract the downloaded ZIP file
-    try:
-        print(Fore.YELLOW + "[*] Extracting the repository...")
-        with zipfile.ZipFile(download_path, 'r') as zip_ref:
-            zip_ref.extractall()
-        print(Fore.GREEN + "[✓] Repository extracted successfully.")
-    except Exception as e:
-        print(Fore.RED + f"[X] Error extracting repository: {e}")
-        return
-
-    # Replace the old files with the new ones
-    extracted_folder = "InstaHive-main"
-    for root, dirs, files in os.walk(extracted_folder):
-        for file in files:
-            # Skip the downloaded ZIP file itself
-            if file == download_path:
-                continue
-            src_file = os.path.join(root, file)
-            dst_file = os.path.join(os.getcwd(), file)
-
-            try:
-                # Replace old files with new ones
-                if os.path.exists(dst_file):
-                    os.remove(dst_file)
-                shutil.copy(src_file, dst_file)
-                print(Fore.GREEN + f"[✓] Replaced: {file}")
-            except Exception as e:
-                print(Fore.RED + f"[X] Error replacing {file}: {e}")
-
-    # Clean up: Delete the downloaded ZIP and extracted folder
-    os.remove(download_path)
-    shutil.rmtree(extracted_folder)
-    print(Fore.GREEN + "[✓] Update complete. Restarting...")
-    sleep(2)
-    os.execv(sys.executable, ['python'] + sys.argv)  # Restart the script to apply updates
-
-# Function to get the current version of the script (use version.txt as the source)
-def get_current_version():
-    try:
-        with open("version.txt", "r") as file:
-            return file.read().strip()  # Get current version from the version.txt file
-    except FileNotFoundError:
-        print(Fore.RED + "[X] version.txt not found.")
-    return "unknown"  # Default fallback version if version.txt isn't found
+    # Check for existing lock
+    if os.path.exists(lock_file):
+        try:
+            with open(lock_file, "r") as f:
+                old_pid = int(f.read())
+                if psutil.pid_exists(old_pid):
+                    print(f"⚠️ Terminating existing instance with PID {old_pid}")
+                    os.kill(old_pid, 9)
+        except Exception as e:
+            print(f"⚠️ Error handling existing lock: {e}")
+    
+    # Create new lock
+    with open(lock_file, "w") as f:
+        f.write(str(os.getpid()))
+    
+    # Add cleanup handler
+    def cleanup():
+        try:
+            os.remove(lock_file)
+        except:
+            pass
+    
+    import atexit
+    atexit.register(cleanup)
 
 # Load only the Telegram bot token
 load_dotenv()
@@ -147,20 +82,40 @@ def extract_shortcode(url):
 def fetch_post(shortcode):
     return instaloader.Post.from_shortcode(L.context, shortcode)
 
-# Send media
+
 def send_media(chat_id, media_url, is_video):
     action = 'upload_video' if is_video else 'upload_photo'
     bot.send_chat_action(chat_id, action)
 
-    r = requests.get(media_url, stream=True)
-    if r.status_code == 200:
-        media = r.content
-        if is_video:
-            bot.send_video(chat_id, media)
-        else:
-            bot.send_photo(chat_id, media)
-    else:
-        bot.send_message(chat_id, "⚠️ Failed to fetch media.")
+    try:
+        # Download media with timeout
+        with requests.get(media_url, stream=True, timeout=(5, 30)) as r:  # 5s connect, 30s read
+            if r.status_code != 200:
+                bot.send_message(chat_id, "⚠️ Failed to fetch media.")
+                return
+
+            # Save to temp file
+            suffix = '.mp4' if is_video else '.jpg'
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                temp_path = f.name
+
+        # Send with increased timeout
+        with open(temp_path, 'rb') as file:
+            if is_video:
+                bot.send_video(chat_id, file, timeout=60)  # 60 seconds timeout
+            else:
+                bot.send_photo(chat_id, file, timeout=60)
+
+        # Cleanup
+        os.unlink(temp_path)
+
+    except requests.exceptions.Timeout:
+        bot.send_message(chat_id, "⌛ Media download timed out. Please try again.")
+    except Exception as e:
+        bot.send_message(chat_id, f"⚠️ Error: {str(e)}")
 
 # /start
 @bot.message_handler(commands=['start'])
@@ -228,9 +183,11 @@ def handle_instagram_url(message):
 
 # Run bot
 if __name__ == "__main__":
-    check_and_update()
+    single_instance_lock()  # Add this line before starting
+    
     login_instagram()
     print("🤖 Bot is running... by @imraj569")
+    
     try:
         bot.polling(none_stop=True)
     except Exception as e:
