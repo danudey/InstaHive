@@ -4,4 +4,4 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ['instaloader', 'psutil']
+dependencies = ['instaloader@git+https://github.com/danudey/instaloader.git@master', 'psutil']
